@@ -38,8 +38,6 @@ def parse_python_file(filepath:Path)->List[Dict]:
                 "file" : str(filepath),
             })
     return functions
-        
-print(len(parse_python_file(Path("data/raw/fastapi/fastapi/applications.py"))))
 
 def parse_directory(directory_path: Path, exclude_patterns:Optional[List[str]]=None):
     """Parse all files in directory"""
@@ -64,7 +62,6 @@ def parse_directory(directory_path: Path, exclude_patterns:Optional[List[str]]=N
     logger.info(f"Parsed {len(all_functions)} total functions")
     return all_functions
 
-all_functions = parse_directory("data/raw/fastapi/fastapi")
 def format_function_for_embedding(function_info: Dict) -> str:
     """Format function metadata into suitable text for embedding ."""
     parts = []
