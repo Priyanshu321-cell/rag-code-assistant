@@ -82,7 +82,7 @@ class VectorStore:
     def get_stats(self) -> Dict:
         """Get vector store statistics"""
         return {'collection_name':self.collection_name , 'total_chunks' : self.collection.count()
-                , 'directory' : self.persist_directory}
+                , 'persist_directory' : self.persist_directory}
     
         
 if __name__ =='__main__':
