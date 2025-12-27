@@ -70,8 +70,9 @@ class HybridSearch:
                     'vector_rank':rank,
                     'chunk':result
                 }
-            scores[chunk_id]['rrf_score'] += rrf
-            scores[chunk_id]['vector_rank'] = rank
+            else:
+                scores[chunk_id]['rrf_score'] += rrf
+                scores[chunk_id]['vector_rank'] = rank
             
         merged = []
         for chunk_id, data in scores.items():

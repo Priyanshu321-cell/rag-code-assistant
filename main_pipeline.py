@@ -163,7 +163,7 @@ def search_code(
         print()
         
         print("="*80)
-
+        
 
 def show_stats():
     """Show statistics about the index"""
