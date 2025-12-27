@@ -7,12 +7,13 @@ from pathlib import Path
 from loguru import logger
 from typing import List, Dict
 import sys
+import pickle
 
 from src.ingestion.parser import parse_directory
 from src.ingestion.chunker import chunk_by_function
 from src.retrieval.embedder import Embedder
 from src.retrieval.vector_store import VectorStore
-
+from src.retrieval.bm25_search import BM25Search
 
 def build_index(
     repo_path: str = "data/raw/fastapi/fastapi",
@@ -48,15 +49,27 @@ def build_index(
     chunks = chunk_by_function(functions)
     logger.info(f"✓ Created {len(chunks)} chunks")
     
-    # Step 3: Initialize embedder and vector store
+    # Step 3: Initialize embedder and vector store 
     logger.info(f"\n[3/4] Initializing embedder and vector store...")
     embedder = Embedder(model_name="all-MiniLM-L6-v2")
-    store = VectorStore(embedder=embedder)
+    vector_store = VectorStore(embedder=embedder)
+    
+    # Initialize bm25 and indexing chunks to store them for later use
+    bm25 = BM25Search()
+    bm25.index_documents(chunks=chunks)
+    
+    bm25_path = Path("data/processed/bm25_index.pkl")
+    bm25_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(bm25_path,'wb') as f:
+        pickle.dump(bm25,f)
+        
+    logger.info(f"Saved BM25 index to {bm25_path}")
     
     # Clear if rebuilding
     if rebuild:
         logger.info("Clearing existing index...")
-        store.clear()
+        vector_store.clear()
     
     # Step 4: Embed and store chunks
     logger.info(f"\n[4/4] Embedding and storing {len(chunks)} chunks...")
@@ -66,11 +79,11 @@ def build_index(
     batch_size = 100
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i:i+batch_size]
-        store.add_chunks(batch)
+        vector_store.add_chunks(batch)
         logger.info(f"  Processed {min(i+batch_size, len(chunks))}/{len(chunks)} chunks")
     
     # Final stats
-    stats = store.get_stats()
+    stats = vector_store.get_stats()
     logger.info("\n" + "="*60)
     logger.info("INDEX BUILD COMPLETE!")
     logger.info("="*60)
@@ -83,33 +96,49 @@ def build_index(
 def search_code(
     query: str,
     top_k: int = 5,
-    file_filter: str = None
+    file_filter: str = None,
+    method: str = "hybrid"
 ):
     """
     Search the indexed codebase.
     """
     
-    logger.info(f"\nSearching for: '{query}'")
-    if file_filter:
-        logger.info(f"Filtered to file: {file_filter}")
+    logger.info(f"\nSearching with {method} for: '{query}'")
     
     # Initialize
     embedder = Embedder(model_name="all-MiniLM-L6-v2")
-    store = VectorStore(embedder=embedder)
+    vector_store = VectorStore(embedder=embedder)
     
     # Check if index exists
-    stats = store.get_stats()
+    stats = vector_store.get_stats()
     if stats['total_chunks'] == 0:
         logger.error("No index found! Run 'python main_pipeline.py build' first.")
         return
     
-    # Build filter
-    filters = None
-    if file_filter:
-        filters = {'file': file_filter}
+    # getting bm25 chunks
+    bm25_path = Path("data/processed/bm25_index.pkl")
+    if method in ["bm25", "hybrid"]:
+        if bm25_path.exists():
+            with open(bm25_path,'rb') as f:
+                bm25 = pickle.load(f)
+            logger.info("Loaded BM25 index")
+        else:
+            logger.error("BM25 index not found. Run 'build' first")
+            return 
     
-    # Search
-    results = store.search(query, n_results=top_k, filters=filters)
+    if method == "vector":
+        results = VectorStore.search(query, n_results=top_k,filters=file_filter)
+    elif method == "bm25":
+        results = bm25.search(query, top_k=top_k)
+        
+    elif method == "hybrid":
+        from src.retrieval.hybrid_search import HybridSearch
+        hybrid = HybridSearch(bm25 ,vector_store)
+        results = hybrid.search(query,n_results=top_k)
+    
+    else:
+        logger.error(f"Unknown method: {method}")
+        return
     
     # Display results
     print("\n" + "="*80)
@@ -120,75 +149,28 @@ def search_code(
         print("No results found.")
         return
     
-    for i, result in enumerate(results, 1):
-        print(f"\n[{i}] {result['metadata']['function']}() ")
-        print(f"    File: {result['metadata']['file']}")
-        print(f"    Similarity: {result['distance']:.2f} (Less is better !)") 
-        print(f"    Preview:")
+    # giving result on basis of hybrid search only
+    
+    for i, result in enumerate(results,1):
+        print(f"[{i}] {result['metadata']['function']}()")
+        print(f"   File: {result['metadata']['file']}")
+        print(f"   Preview: ")
         
-        # Show first 200 chars of text
         preview = result['text'][:200].replace('\n', '\n    ')
         print(f"    {preview}")
         if len(result['text']) > 200:
             print(f"    ...")
         print()
-    
-    print("="*80)
-
-
-def interactive_search():
-    """Interactive search mode - keep asking for queries"""
-    
-    logger.info("Starting interactive search mode")
-    logger.info("Type 'quit' or 'exit' to stop\n")
-    
-    # Initialize once
-    embedder = Embedder(model_name="all-MiniLM-L6-v2")
-    store = VectorStore(embedder=embedder)
-    
-    # Check if index exists
-    stats = store.get_stats()
-    if stats['total_chunks'] == 0:
-        logger.error("No index found! Run 'python main_pipeline.py build' first.")
-        return
-    
-    logger.info(f"Index loaded: {stats['total_chunks']} chunks available\n")
-    
-    while True:
-        try:
-            # Get query from user
-            query = input("Search query: ").strip()
-            
-            if query.lower() in ['quit', 'exit', 'q']:
-                logger.info("Exiting interactive mode")
-                break
-            
-            if not query:
-                continue
-            
-            # Search
-            results = store.search(query, n_results=5)
-            
-            # Display results
-            print("\n" + "-"*80)
-            for i, result in enumerate(results, 1):
-                print(f"[{i}] {result['metadata']['function']} - {result['metadata']['file']}")
-                print(f"    Similarity: {result['distance']:.2f} (Less is better !)")
-            print("-"*80 + "\n")
-            
-        except KeyboardInterrupt:
-            logger.info("\nExiting interactive mode")
-            break
-        except Exception as e:
-            logger.error(f"Error: {e}")
+        
+        print("="*80)
 
 
 def show_stats():
     """Show statistics about the index"""
     
     embedder = Embedder(model_name="all-MiniLM-L6-v2")
-    store = VectorStore(embedder=embedder)
-    stats = store.get_stats()
+    vector_store = VectorStore(embedder=embedder)
+    stats = vector_store.get_stats()
     
     print("\n" + "="*60)
     print("INDEX STATISTICS")
@@ -207,13 +189,11 @@ def main():
         print("  python main_pipeline.py build              # Build the index")
         print("  python main_pipeline.py rebuild            # Rebuild from scratch")
         print("  python main_pipeline.py search 'query'     # Search the index")
-        print("  python main_pipeline.py interactive        # Interactive search mode")
         print("  python main_pipeline.py stats              # Show index statistics")
         print("\nExamples:")
         print("  python main_pipeline.py build")
         print("  python main_pipeline.py search 'how to create endpoint'")
         print("  python main_pipeline.py search 'authentication' --file auth.py")
-        print("  python main_pipeline.py interactive")
         print()
         return
     
@@ -242,15 +222,12 @@ def main():
         
         search_code(query, top_k=5, file_filter=file_filter)
     
-    elif command == "interactive":
-        interactive_search()
-    
     elif command == "stats":
         show_stats()
     
     else:
         print(f"Unknown command: {command}")
-        print("Use 'build', 'rebuild', 'search', 'interactive', or 'stats'")
+        print("Use 'build', 'rebuild', 'search', or 'stats'")
 
 
 if __name__ == "__main__":
