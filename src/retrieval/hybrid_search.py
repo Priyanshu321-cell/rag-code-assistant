@@ -2,20 +2,26 @@ from loguru import logger
 from typing import List,Dict
 
 class HybridSearch:
-    def __init__(self, bm25_searcher, vector_store, k: int = 60):
+    def __init__(self, bm25_searcher, vector_store, reranker = None, k: int = 60):
         """Initialize hybrid search"""
         self.bm25 = bm25_searcher
         self.vector = vector_store
         self.k = k
-        logger.info(f"Initialized HybridSearch with k = {k}")
+        self.reranker = reranker
+        logger.info(f"Initialized HybridSearch with k={k}, reranker={reranker is not None}")
         
-    def search(self, query:str ,n_results: int = 10,bm25_weight: float=1.0,vector_weight:float =1.0):
+    def search(self, query:str ,n_results: int = 10,bm25_weight: float=1.0,vector_weight:float =1.0, use_reranker:bool = True):
         """Hybrid search using RRF"""
+        import time
+        start = time.time()
         logger.debug(f"Hybrid search for : '{query}'")
-        retrieve_k = n_results *2
+        if use_reranker and self.reranker:
+            retrieve_k = n_results * 3  
+        else:
+            retrieve_k = n_results
         
         bm25_results = self.bm25.search(query, top_k=retrieve_k)
-        vector_results = self.vector.search(query, n_results=retrieve_k)
+        vector_results = self.vector.search(query, n_results=retrieve_k)  
         
         logger.debug(f"BM25 returned {len(bm25_results)} results")
         logger.debug(f"Vector returned {len(vector_results)} results")
@@ -27,10 +33,16 @@ class HybridSearch:
             vector_weight,
         )
         
-        final = merged[:n_results]
+        if use_reranker and self.reranker and len(merged) > 0:
+            logger.debug("Applying cross-encoder reranking")
+            merged = self.reranker.rerank(query, merged, top_k=n_results)
+        else:
+            merged = merged[:n_results]
         
-        logger.info(f"Hybrid search returned {len(final)} results")
-        return final
+        
+        logger.info(f"Hybrid search returned {len(merged)} results")
+        logger.debug(f"Search completed in {(time.time()-start)*1000:.0f}ms")
+        return merged
         
     def _rrf_score(self, rank:int)->float:
         """Calculate RRF score for a given rank"""

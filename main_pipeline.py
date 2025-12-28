@@ -47,7 +47,6 @@ def build_index(
     # Step 2: Create chunks
     logger.info(f"\n[2/4] Creating chunks...")
     chunks = chunk_by_function(functions)
-    logger.info(f"✓ Created {len(chunks)} chunks")
     
     # Step 3: Initialize embedder and vector store 
     logger.info(f"\n[3/4] Initializing embedder and vector store...")
@@ -95,7 +94,7 @@ def build_index(
 
 def search_code(
     query: str,
-    top_k: int = 5,
+    top_k: int = 7,
     file_filter: str = None,
     method: str = "hybrid"
 ):
@@ -133,8 +132,11 @@ def search_code(
         
     elif method == "hybrid":
         from src.retrieval.hybrid_search import HybridSearch
-        hybrid = HybridSearch(bm25 ,vector_store)
-        results = hybrid.search(query,n_results=top_k)
+        from src.retrieval.reranker import Reranker
+        
+        reranker = Reranker()
+        hybrid = HybridSearch(bm25 ,vector_store, reranker=reranker)
+        results = hybrid.search(query,n_results=top_k, use_reranker=True)
     
     else:
         logger.error(f"Unknown method: {method}")
@@ -154,6 +156,7 @@ def search_code(
     for i, result in enumerate(results,1):
         print(f"[{i}] {result['metadata']['function']}()")
         print(f"   File: {result['metadata']['file']}")
+        print(f"   Rerank score : {result['rerank_score']}")
         print(f"   Preview: ")
         
         preview = result['text'][:200].replace('\n', '\n    ')
