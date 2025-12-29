@@ -2,37 +2,54 @@ from loguru import logger
 from typing import List,Dict
 
 class HybridSearch:
-    def __init__(self, bm25_searcher, vector_store, reranker = None, k: int = 60):
+    def __init__(self, bm25_searcher, vector_store, reranker = None,query_expander=None, k: int = 60):
         """Initialize hybrid search"""
         self.bm25 = bm25_searcher
         self.vector = vector_store
         self.k = k
         self.reranker = reranker
+        self.query_expander = query_expander
         logger.info(f"Initialized HybridSearch with k={k}, reranker={reranker is not None}")
         
-    def search(self, query:str ,n_results: int = 10,bm25_weight: float=1.0,vector_weight:float =1.0, use_reranker:bool = True):
+    def search(self, query:str ,n_results: int = 10,bm25_weight: float=1.0,vector_weight:float =1.0, use_reranker:bool = True, expand_query: bool=True):
         """Hybrid search using RRF"""
         import time
         start = time.time()
-        logger.debug(f"Hybrid search for : '{query}'")
-        if use_reranker and self.reranker:
-            retrieve_k = n_results * 3  
-        else:
-            retrieve_k = n_results
         
-        bm25_results = self.bm25.search(query, top_k=retrieve_k)
-        vector_results = self.vector.search(query, n_results=retrieve_k)  
+        # Expand query if enabled 
+        if expand_query and self.query_expander:
+            queries = self.query_expander.expand(query)
+            logger.debug(f"Expanded into {len(queries)} queries: {queries}")
+        else :
+            queries = [query]
+            
+        all_results = {}
+        for query in queries:
+            if use_reranker and self.reranker:
+                retrieve_k = n_results * 3  
+            else:
+                retrieve_k = n_results
+            
+            bm25_results = self.bm25.search(query, top_k=retrieve_k)
+            vector_results = self.vector.search(query, n_results=retrieve_k)  
+            
+            merged = self._merge_results(
+                bm25_results,
+                vector_results,
+                bm25_weight,
+                vector_weight,
+            )
+            
+            for result in merged:
+                chunk_id = result['id']
+                if chunk_id not in all_results:
+                    all_results[chunk_id] = result
+                else:
+                    if result['rrf_score'] > all_results[chunk_id]['rrf_score']:
+                        all_results[chunk_id] = result
         
-        logger.debug(f"BM25 returned {len(bm25_results)} results")
-        logger.debug(f"Vector returned {len(vector_results)} results")
-        
-        merged = self._merge_results(
-            bm25_results,
-            vector_results,
-            bm25_weight,
-            vector_weight,
-        )
-        
+        merged = list(all_results.values())
+        merged.sort(key=lambda x: x['rrf_score'], reverse=True)
         if use_reranker and self.reranker and len(merged) > 0:
             logger.debug("Applying cross-encoder reranking")
             merged = self.reranker.rerank(query, merged, top_k=n_results)
