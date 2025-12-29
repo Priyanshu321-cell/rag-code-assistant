@@ -14,6 +14,7 @@ class QueryExpander:
             raise ValueError("API key required. Set API_KEY env var or pass api_key parameter")
         self.client = genai.Client(api_key=api_key)
         self.model = model
+        self.cache = {}
         logger.info(f"QueryExpander initialized with model: {model}")
         
     def expand(
@@ -23,6 +24,12 @@ class QueryExpander:
         context: str = "Python code search"
     )->List[str]:
         """Expand query into variations"""
+        
+        # Check cache first
+        if query in self.cache:
+            logger.debug(f"Using cached expansion for '{query}'")
+            return self.cache[query]
+        
         if(len(query.split(" "))>5):
             logger.debug(f"Query already detailed, skipping expansion: '{query}'")
             return [query]
@@ -40,6 +47,8 @@ class QueryExpander:
             all_queries = [query] + variations
             logger.info(f"Expanded '{query}' into {len(all_queries)} queries")
             
+            self.cache[query] = all_queries
+
             return all_queries
         except Exception as e:
             logger.error(f"Query expansion failed: {e}")
@@ -95,4 +104,5 @@ class QueryExpander:
         
 if __name__=="__main__":
     query_expander = QueryExpander()
+    print(query_expander.expand("authenticate"))
     print(query_expander.expand("authenticate"))

@@ -13,8 +13,6 @@ class HybridSearch:
         
     def search(self, query:str ,n_results: int = 10,bm25_weight: float=1.0,vector_weight:float =1.0, use_reranker:bool = True, expand_query: bool=True):
         """Hybrid search using RRF"""
-        import time
-        start = time.time()
         
         # Expand query if enabled 
         if expand_query and self.query_expander:
@@ -58,7 +56,6 @@ class HybridSearch:
         
         
         logger.info(f"Hybrid search returned {len(merged)} results")
-        logger.debug(f"Search completed in {(time.time()-start)*1000:.0f}ms")
         return merged
         
     def _rrf_score(self, rank:int)->float:

@@ -75,23 +75,12 @@ python main_pipeline.py search "how to create an API endpoint"
 python main_pipeline.py search "user authentication"
 python main_pipeline.py search "middleware"
 
-# Interactive mode
-python main_pipeline.py interactive
 ```
 
 ## Demo
 
 ![Demo](./demo/demo.gif)
 
-
-## 📊 Performance
-
-| Metric | Value |
-|--------|-------|
-| Functions Indexed | 327 |
-| Embedding Dimension | 384 |
-| Search Latency (p95) | <200ms |
-| Model | all-MiniLM-L6-v2 |
 
 ## 🛠️ Tech Stack
 
@@ -119,34 +108,6 @@ rag-code-assistant/
 └── README.md
 ```
 
-## 💡 Usage Examples
-
-### Search for API Routes
-```bash
-$ python main_pipeline.py search "create endpoint"
-
-[1] add_api_route()
-    File: applications.py (line 234)
-    Similarity: 89.34%
-    
-[2] APIRouter()
-    File: routing.py (line 45)
-    Similarity: 85.67%
-```
-
-### Filter by File
-```bash
-$ python main_pipeline.py search "authentication" --file auth.py
-```
-
-### Interactive Mode
-```bash
-$ python main_pipeline.py interactive
-Search query: dependency injection
-[1] Depends - dependencies.py
-[2] Security - security.py
-```
-
 ## 🎓 What I Learned
 
 Building this project taught me:
@@ -157,23 +118,6 @@ Building this project taught me:
 4. **ML Engineering**: Building production-ready pipelines
 5. **System Design**: Modular architecture for extensibility
 
-## 🚧 Roadmap
-
-**Week 2** (In Progress):
-- [ ] Hybrid search (BM25 + vector)
-- [ ] Cross-encoder reranking
-- [ ] Query expansion with LLMs
-
-**Week 3** (Planned):
-- [ ] Evaluation framework with test queries
-- [ ] Retrieval metrics (Recall@K, MRR, NDCG)
-- [ ] A/B testing different strategies
-
-**Week 4** (Planned):
-- [ ] LLM integration for answer generation
-- [ ] Citation system
-- [ ] Multi-turn conversations
-
 ## 📝 Development Log
 
 - **Week 1**: Core RAG pipeline (parser, embedder, vector store)
@@ -182,6 +126,12 @@ Building this project taught me:
 - Integrated sentence-transformers
 - Created ChromaDB interface
 - Indexed full FastAPI codebase (327 functions)
+
+- **Week 2**: Core RAG pipeline (parser, embedder, vector store)
+- Add keyword-based retrieval BM25
+- Hybrid Search Implementation (Combine vector + keyword search)
+- Reranking with Cross-Encoder
+- Implemented Query expansion
 
 ## 🤝 Contributing
 
@@ -203,5 +153,3 @@ MIT License - feel free to use this for learning
 - ChromaDB for vector database
 
 ---
-
-**Status**:  | In Active Development 🚧
