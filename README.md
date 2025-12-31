@@ -121,19 +121,19 @@ Building this project taught me:
 ## 📝 Development Log
 
 - **Week 1**: Core RAG pipeline (parser, embedder, vector store)
-- Built AST parser for function extraction
-- Implemented chunking strategies
-- Integrated sentence-transformers
-- Created ChromaDB interface
-- Indexed full FastAPI codebase (327 functions)
+1. Built AST parser for function extraction
+2. Implemented chunking strategies
+3. Integrated sentence-transformers
+4. Created ChromaDB interface
+5. Indexed full FastAPI codebase (327 functions)
 
 - **Week 2**: Core RAG pipeline (parser, embedder, vector store)
-- Add keyword-based retrieval BM25
-- Hybrid Search Implementation (Combine vector + keyword search)
-- Reranking with Cross-Encoder
-- Implemented Query expansion
-- Implemented query routing
-- Performed comparisons
+1. Add keyword-based retrieval BM25
+2. Hybrid Search Implementation (Combine vector + keyword search)
+3. Reranking with Cross-Encoder
+4. Implemented Query expansion
+5. Implemented query routing
+6. Performed comparisons
 - See [Week 2 Summary](docs/week2_summary.md) for detailed findings.
 
 ## 🤝 Contributing
