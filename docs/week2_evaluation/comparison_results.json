@@ -1,0 +1,332 @@
+{
+  "specific_terms": {
+    "APIRouter": {
+      "vector_only": [
+        "APIRouter",
+        "include_router",
+        "include_router"
+      ],
+      "bm25_only": [
+        "include_router",
+        "include_router",
+        "options"
+      ],
+      "hybrid_basic": [
+        "include_router",
+        "include_router",
+        "options"
+      ],
+      "hybrid_rerank": [
+        "APIRouter",
+        "include_router",
+        "include_router"
+      ],
+      "hybrid_classified": [
+        "include_router",
+        "include_router",
+        "options"
+      ]
+    },
+    "HTTPException": {
+      "vector_only": [
+        "handle_http_exception",
+        "http_exception_handler",
+        "make_not_authenticated_error"
+      ],
+      "bm25_only": [
+        "make_not_authenticated_error",
+        "make_not_authenticated_error",
+        "http_exception_handler"
+      ],
+      "hybrid_basic": [
+        "http_exception_handler",
+        "make_not_authenticated_error",
+        "make_not_authenticated_error"
+      ],
+      "hybrid_rerank": [
+        "handle_http_exception",
+        "make_not_authenticated_error",
+        "http_exception_handler"
+      ],
+      "hybrid_classified": [
+        "make_not_authenticated_error",
+        "make_not_authenticated_error",
+        "http_exception_handler"
+      ]
+    },
+    "Request": {
+      "vector_only": [
+        "middleware",
+        "websocket_request_validation_exception_handler",
+        "__call__"
+      ],
+      "bm25_only": [
+        "__call__",
+        "__call__",
+        "__call__"
+      ],
+      "hybrid_basic": [
+        "__call__",
+        "request_validation_exception_handler",
+        "__call__"
+      ],
+      "hybrid_rerank": [
+        "__call__",
+        "__call__",
+        "request_response"
+      ],
+      "hybrid_classified": [
+        "__call__",
+        "__call__",
+        "__call__"
+      ]
+    }
+  },
+  "semantic": {
+    "how to authenticate users": {
+      "vector_only": [
+        "authenticate_user",
+        "__call__",
+        "__call__"
+      ],
+      "bm25_only": [
+        "make_authenticate_headers",
+        "get_swagger_ui_html",
+        "make_not_authenticated_error"
+      ],
+      "hybrid_basic": [
+        "make_authenticate_headers",
+        "openapi",
+        "make_not_authenticated_error"
+      ],
+      "hybrid_rerank": [
+        "make_authenticate_headers",
+        "make_not_authenticated_error",
+        "make_not_authenticated_error"
+      ],
+      "hybrid_classified": [
+        "make_authenticate_headers",
+        "make_not_authenticated_error",
+        "make_not_authenticated_error"
+      ]
+    },
+    "validate request data": {
+      "vector_only": [
+        "request_validation_exception_handler",
+        "get_body_field",
+        "_validate"
+      ],
+      "bm25_only": [
+        "get_body_field",
+        "__call__",
+        "write"
+      ],
+      "hybrid_basic": [
+        "get_body_field",
+        "validate",
+        "validate"
+      ],
+      "hybrid_rerank": [
+        "get_body_field",
+        "validate",
+        "_validate"
+      ],
+      "hybrid_classified": [
+        "get_body_field",
+        "validate",
+        "_validate"
+      ]
+    },
+    "handle errors in API": {
+      "vector_only": [
+        "exception_handler",
+        "request_validation_exception_handler",
+        "http_exception_handler"
+      ],
+      "bm25_only": [
+        "exception_handler",
+        "_normalize_errors",
+        "errors"
+      ],
+      "hybrid_basic": [
+        "exception_handler",
+        "errors",
+        "_normalize_errors"
+      ],
+      "hybrid_rerank": [
+        "check_api_key",
+        "handle_http_exception",
+        "make_not_authenticated_error"
+      ],
+      "hybrid_classified": [
+        "check_api_key",
+        "handle_http_exception",
+        "make_not_authenticated_error"
+      ]
+    }
+  },
+  "concepts": {
+    "routing": {
+      "vector_only": [
+        "APIRouter",
+        "create_api_route",
+        "route"
+      ],
+      "bm25_only": [
+        "generate_operation_summary",
+        "get_fields_from_routes",
+        "generate_operation_id"
+      ],
+      "hybrid_basic": [
+        "include_router",
+        "generate_operation_summary",
+        "get_fields_from_routes"
+      ],
+      "hybrid_rerank": [
+        "get_openapi_operation_metadata",
+        "get_openapi_path",
+        "api_route"
+      ],
+      "hybrid_classified": [
+        "get_openapi_operation_metadata",
+        "get_openapi_path",
+        "api_route"
+      ]
+    },
+    "validation": {
+      "vector_only": [
+        "validate",
+        "validate",
+        "validation_alias"
+      ],
+      "bm25_only": [
+        "get_schema_from_model_field",
+        "_remap_definitions_and_field_mappings",
+        "get_definitions"
+      ],
+      "hybrid_basic": [
+        "create_model_field",
+        "get_schema_from_model_field",
+        "_remap_definitions_and_field_mappings"
+      ],
+      "hybrid_rerank": [
+        "validation_alias",
+        "get_definitions",
+        "get_schema_from_model_field"
+      ],
+      "hybrid_classified": [
+        "validation_alias",
+        "get_definitions",
+        "get_schema_from_model_field"
+      ]
+    },
+    "middleware": {
+      "vector_only": [
+        "middleware",
+        "decorator",
+        "__init__"
+      ],
+      "bm25_only": [
+        "middleware"
+      ],
+      "hybrid_basic": [
+        "middleware",
+        "decorator",
+        "__init__"
+      ],
+      "hybrid_rerank": [
+        "middleware",
+        "app",
+        "decorator"
+      ],
+      "hybrid_classified": [
+        "middleware",
+        "app",
+        "decorator"
+      ]
+    }
+  },
+  "code_patterns": {
+    "async endpoint function": {
+      "vector_only": [
+        "run_endpoint_function",
+        "app",
+        "app"
+      ],
+      "bm25_only": [
+        "__init__",
+        "add_api_websocket_route",
+        "add_api_websocket_route"
+      ],
+      "hybrid_basic": [
+        "app",
+        "app",
+        "__init__"
+      ],
+      "hybrid_rerank": [
+        "run_endpoint_function",
+        "app",
+        "app"
+      ],
+      "hybrid_classified": [
+        "run_endpoint_function",
+        "app",
+        "app"
+      ]
+    },
+    "dependency injection": {
+      "vector_only": [
+        "__init__",
+        "add_non_field_param_to_dependency",
+        "Depends"
+      ],
+      "bm25_only": [
+        "get_parameterless_sub_dependant",
+        "__init__",
+        "__init__"
+      ],
+      "hybrid_basic": [
+        "Depends",
+        "__init__",
+        "__init__"
+      ],
+      "hybrid_rerank": [
+        "solve_dependencies",
+        "Depends",
+        "Security"
+      ],
+      "hybrid_classified": [
+        "solve_dependencies",
+        "Depends",
+        "Security"
+      ]
+    },
+    "exception handler": {
+      "vector_only": [
+        "exception_handler",
+        "handle_http_exception",
+        "http_exception_handler"
+      ],
+      "bm25_only": [
+        "exception_handler",
+        "_is_error_wrapper",
+        "__get_pydantic_json_schema__"
+      ],
+      "hybrid_basic": [
+        "exception_handler",
+        "_is_error_wrapper",
+        "__get_pydantic_json_schema__"
+      ],
+      "hybrid_rerank": [
+        "request_validation_exception_handler",
+        "http_exception_handler",
+        "websocket_request_validation_exception_handler"
+      ],
+      "hybrid_classified": [
+        "request_validation_exception_handler",
+        "http_exception_handler",
+        "websocket_request_validation_exception_handler"
+      ]
+    }
+  }
+}

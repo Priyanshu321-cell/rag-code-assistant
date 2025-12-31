@@ -132,6 +132,9 @@ Building this project taught me:
 - Hybrid Search Implementation (Combine vector + keyword search)
 - Reranking with Cross-Encoder
 - Implemented Query expansion
+- Implemented query routing
+- Performed comparisons
+- See [Week 2 Summary](docs/week2_summary.md) for detailed findings.
 
 ## 🤝 Contributing
 
