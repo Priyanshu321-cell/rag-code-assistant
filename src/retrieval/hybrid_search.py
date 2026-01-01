@@ -12,7 +12,7 @@ class HybridSearch:
         self.query_classifier = query_classifier
         logger.info(f"Initialized HybridSearch with k={k}, reranker={reranker is not None}")
         
-    def search(self, query:str ,n_results: int = 10,use_classifier: bool= True):
+    def search(self, query:str ,n_results: int = 10,use_classifier: bool= True, use_reranker = False):
         """search"""
         
         

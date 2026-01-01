@@ -5,7 +5,6 @@ Connects all components: parser, chunker, embedder, vector store.
 
 from pathlib import Path
 from loguru import logger
-from typing import List, Dict
 import sys
 import pickle
 
@@ -72,7 +71,6 @@ def build_index(
     
     # Step 4: Embed and store chunks
     logger.info(f"\n[4/4] Embedding and storing {len(chunks)} chunks...")
-    logger.info("This may take a few minutes...")
     
     # Add in batches to show progress
     batch_size = 100
@@ -125,6 +123,7 @@ def search_code(
             logger.error("BM25 index not found. Run 'build' first")
             return 
     
+    # Choosing method
     if method == "vector":
         results = VectorStore.search(query, n_results=top_k,filters=file_filter)
     elif method == "bm25":
