@@ -1,0 +1,38 @@
+================================================================================
+GOLDEN DATASET ANALYSIS
+================================================================================
+
+Total queries: 34
+
+By category:
+  code_pattern        :  8 queries
+  concept             :  8 queries
+  how_to              : 10 queries
+  specific_term       :  8 queries
+
+By difficulty:
+  easy                :  8 queries
+  hard                :  6 queries
+  medium              : 20 queries
+
+Relevant results per query:
+  Mean: 4.1
+  Min:  1
+  Max:  8
+
+Sample queries:
+
+  Query: APIRouter
+  Relevant functions: include_router, include_router, add_api_route
+
+  Query: HTTPException
+  Relevant functions: http_exception_handler, __init__, get_route_handler
+
+  Query: Request
+  Relevant functions: middleware, request_response, get_route_handler
+
+  Query: Response
+  Relevant functions: request_response, get_request_handler, get_route_handler
+
+  Query: Depends
+  Relevant functions: Depends, get_parameterless_sub_dependant, analyze_param
