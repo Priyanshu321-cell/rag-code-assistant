@@ -36,14 +36,15 @@ class Reranker:
         logger.debug(f"Reranking complete, returning {len(reranked)} results")
         return reranked
     
-    def _create_pairs(self,query: str,results: List[Dict]) -> List[List[str]]:
-        """Create query document pairs for cross encoder"""
+    def _create_pairs(self, query: str, results: List[Dict]) -> List[List[str]]:
+        """Create pairs - SIMPLE VERSION"""
+        
         pairs = []
         for result in results:
-            if len(result['text'])>2000:
-                pairs.append([query,result['text'][:2000]+'...'])
-            else:
-                pairs.append([query, result['text']])
+            function_name = result['metadata']['function']
+            file = result['metadata']['file']
+            pairs.append([query, f"{function_name} - {file}"])
+        
         return pairs
                 
                 
