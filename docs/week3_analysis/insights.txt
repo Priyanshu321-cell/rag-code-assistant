@@ -1,0 +1,45 @@
+KEY INSIGHTS FROM EVALUATION
+================================================================================
+
+1. For specific_term queries, vector_only performs best (52.8% Recall@5)
+2. For how_to queries, hybrid_basic performs best (57.8% Recall@5)
+3. For concept queries, hybrid_rerank performs best (54.2% Recall@5)
+4. For code_pattern queries, hybrid_rerank performs best (64.8% Recall@5)
+5. Overall best method: hybrid_rerank
+
+
+====================================================================================================
+BEST METHOD PER CATEGORY
+====================================================================================================
+
+SPECIFIC_TERM:
+  Ranked by Recall@5:
+    👑 vector_only               0.5275
+    2. hybrid_rerank             0.5126
+    3. hybrid_basic              0.4649
+    4. bm25_only                 0.3076
+    5. hybrid_classified         0.3076
+
+HOW_TO:
+  Ranked by Recall@5:
+    👑 hybrid_basic              0.5783
+    2. hybrid_rerank             0.4717
+    3. hybrid_classified         0.4717
+    4. vector_only               0.4233
+    5. bm25_only                 0.4033
+
+CONCEPT:
+  Ranked by Recall@5:
+    👑 hybrid_rerank             0.5420
+    2. hybrid_classified         0.5420
+    3. hybrid_basic              0.5089
+    4. vector_only               0.4911
+    5. bm25_only                 0.2077
+
+CODE_PATTERN:
+  Ranked by Recall@5:
+    👑 hybrid_rerank             0.6479
+    2. hybrid_classified         0.6479
+    3. hybrid_basic              0.4958
+    4. vector_only               0.4792
+    5. bm25_only                 0.4229

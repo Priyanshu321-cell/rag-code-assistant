@@ -80,6 +80,44 @@ class SearchEvaluator:
             }
         }
         
+    def compare_all_methods_by_category(self) -> Dict:
+        """Compare all methods broken down by query category"""
+        logger.info("Running category-wise comparison for all methods")
+        
+        all_results = {}
+        
+        for method_name in self.search_methods.keys():
+            logger.info(f"Evaluating {method_name} by category...")
+            all_results[method_name] = self.evaluate_by_category(method_name)
+            
+        return all_results
+    
+    def print_category_comparison(self, results:Dict):
+        """Print category comparison in formatted table"""
+        print(f"\n" + "="*100)
+        print("PERFORMANCE BY QUERY CATEGORY")
+        print("="*100)
+    
+        # Get all categories
+        categories = list(next(iter(results.values())).keys())
+        
+        for category in categories:
+            print(f"\n{'='*100}")
+            print(f"Category: {category.upper()}")
+            print('='*100)
+            
+            print(f"{'Method':<25} {'Recall@5':>12} {'Precision@5':>12} {'MRR':>12} {'NDCG@5':>12}")
+            print("-" * 100)
+            
+            for method_name in results.keys():
+                metrics = results[method_name][category]
+                
+                print(f"{method_name:<25} "
+                    f"{metrics['recall@5']:>12.4f} "
+                    f"{metrics['precision@5']:>12.4f} "
+                    f"{metrics['mrr']:>12.4f} "
+                    f"{metrics['ndcg@5']:>12.4f}")
+        
     def evaluate_method(self, method_name: str, k_values: List[int] = [1, 3, 5, 10]) -> Dict:
         """
         Evaluate a single search method on all queries.

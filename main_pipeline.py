@@ -94,7 +94,7 @@ def search_code(
     query: str,
     top_k: int = 7,
     file_filter: str = None,
-    method: str = "hybrid"
+    method: str = "adaptive"
 ):
     """
     Search the indexed codebase.
@@ -102,40 +102,36 @@ def search_code(
     
     logger.info(f"\nSearching with {method} for: '{query}'")
     
-    # Initialize
     embedder = Embedder(model_name="all-MiniLM-L6-v2")
     vector_store = VectorStore(embedder=embedder)
     
+    with open("data/processed/bm25_index.pkl", 'rb') as f:
+        bm25 = pickle.load(f)
+        
     # Check if index exists
     stats = vector_store.get_stats()
     if stats['total_chunks'] == 0:
         logger.error("No index found! Run 'python main_pipeline.py build' first.")
         return
     
-    # getting bm25 chunks
-    bm25_path = Path("data/processed/bm25_index.pkl")
-    if method in ["bm25", "hybrid"]:
-        if bm25_path.exists():
-            with open(bm25_path,'rb') as f:
-                bm25 = pickle.load(f)
-            logger.info("Loaded BM25 index")
-        else:
-            logger.error("BM25 index not found. Run 'build' first")
-            return 
-    
-    # Choosing method
-    if method == "vector":
-        results = VectorStore.search(query, n_results=top_k,filters=file_filter)
-    elif method == "bm25":
-        results = bm25.search(query, top_k=top_k)
-        
-    elif method == "hybrid":
-        from src.retrieval.hybrid_search import HybridSearch
+    if method == "adaptive":
+        from src.retrieval.adaptive_search import AdaptiveSearch
         from src.retrieval.reranker import Reranker
         
         reranker = Reranker()
-        hybrid = HybridSearch(bm25 ,vector_store, reranker=reranker)
-        results = hybrid.search(query,n_results=top_k, use_reranker=True)
+        adaptive = AdaptiveSearch(bm25, vector_store, reranker)
+        results = adaptive.search(query, n_results=top_k)
+    
+    elif method == "vector":
+        results = vector_store.search(query, n_results=top_k)
+    
+    elif method == "bm25":
+        results = bm25.search(query, top_k=top_k)
+    
+    elif method == "hybrid":
+        from src.retrieval.hybrid_search import HybridSearch
+        hybrid = HybridSearch(bm25, vector_store)
+        results = hybrid.search(query, n_results=top_k)
     
     else:
         logger.error(f"Unknown method: {method}")
@@ -155,7 +151,6 @@ def search_code(
     for i, result in enumerate(results,1):
         print(f"[{i}] {result['metadata']['function']}()")
         print(f"   File: {result['metadata']['file']}")
-        print(f"   Rerank score : {result['rerank_score']}")
         print(f"   Preview: ")
         
         preview = result['text'][:200].replace('\n', '\n    ')
