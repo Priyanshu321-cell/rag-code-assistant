@@ -77,11 +77,6 @@ python main_pipeline.py search "middleware"
 
 ```
 
-## Demo
-
-![Demo](./demo/demo.gif)
-
-
 ## 🛠️ Tech Stack
 
 - **Parsing**: Python AST module
@@ -93,19 +88,55 @@ python main_pipeline.py search "middleware"
 ## 📁 Project Structure
 ```
 rag-code-assistant/
-├── src/
-│   ├── ingestion/
-│   │   ├── parser.py          # AST-based code parsing
-│   │   └── chunker.py         # Text formatting for embedding
-│   └── retrieval/
-│       ├── embedder.py        # Sentence-transformers wrapper
-│       └── vector_store.py    # ChromaDB interface
 ├── data/
-│   ├── raw/                   # Source repositories
-│   └── vector_db/             # Persisted embeddings
-├── main_pipeline.py           # CLI entry point
+│   ├── raw/                         # Source repositories / raw code
+│   ├── processed/
+│   │   └── bm25_index.pkl           # Precomputed BM25 index
+│   └── vector_db/                   # Persisted vector embeddings
+│
+├── docs/                            # Evaluation results and Performance reports
+│
+├── demo/                            # Demo runs / notebooks
+│
+├── scripts/                         # Standalone utility scripts
+│
+├── src/
+│   ├── evaluation/
+│   │   ├── __pycache__/
+│   │   ├── scripts/
+│   │   ├── evaluator.py             # Evaluation pipeline
+│   │   └── metrics.py               # Evaluation metrics (MRR, Recall, etc.)
+│   │
+│   ├── generation/
+│   │   └── __init__.py              # LLM prompt & answer generation
+│   │
+│   ├── ingestion/
+│   │   ├── __pycache__/
+│   │   ├── __init__.py
+│   │   ├── chunker.py               # Code chunking for embeddings
+│   │   └── parser.py                # AST-based code parsing
+│   │
+│   ├── retrieval/
+│   │   ├── __pycache__/
+│   │   ├── __init__.py
+│   │   ├── adaptive_search.py       # Dynamic retrieval strategy
+│   │   ├── bm25_search.py            # Sparse BM25 retrieval
+│   │   ├── embedder.py               # Embedding model wrapper
+│   │   ├── hybrid_search.py          # BM25 + vector hybrid retrieval
+│   │   ├── query_classifier.py       # Query intent classification
+│   │   ├── query_expander.py         # Query expansion logic
+│   │   ├── reranker.py               # Cross-encoder reranking
+│   │   └── vector_store.py           # Vector DB interface
+│   │
+│   └── __init__.py
+│
+├── venv/                            # Virtual environment (local)
+├── .env
+├── .gitignore
+├── main_pipeline.py                 # Orchestration / CLI entry point
 ├── requirements.txt
 └── README.md
+
 ```
 
 ## 🎓 What I Learned
