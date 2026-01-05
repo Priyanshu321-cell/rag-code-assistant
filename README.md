@@ -136,6 +136,57 @@ Building this project taught me:
 6. Performed comparisons
 - See [Week 2 Summary](docs/week2_summary.md) for detailed findings.
 
+## Week 3: Evaluation & Results ✅
+
+### Rigorous Testing Methodology
+
+Evaluated 5 retrieval strategies on **34 manually-labeled test queries** across 4 categories:
+
+| Category | Queries | Example |
+|----------|---------|---------|
+| Specific Terms | 8 | "APIRouter", "HTTPException" |
+| How-To | 10 | "how to authenticate users" |
+| Concepts | 8 | "routing", "validation" |
+| Code Patterns | 8 | "async endpoint function" |
+
+**Total**: 139 relevant results manually labeled as ground truth.
+
+### Key Results
+
+| Method | Recall@5 | Latency | Best For |
+|--------|----------|---------|----------|
+| Vector only | 47.7% | 45ms | Specific terms (52.8%) |
+| BM25 only | 33.9% | 12ms | - |
+| Hybrid basic | 51.6% | 98ms | How-to queries (57.8%) |
+| Hybrid + rerank | 53.9% | 278ms | Complex patterns (64.8%) |
+| **Adaptive** | **~56%** | **~140ms** | **All query types** |
+
+### Surprising Findings
+
+1. **Vector embeddings beat BM25 on exact terms** (52.8% vs 30.8%)
+   - Modern embeddings handle technical terminology well
+   
+2. **Reranking hurts simple queries** (47.2% vs 57.8% on how-to)
+   - Clear queries don't benefit from expensive reranking
+   
+3. **Reranking shines on complexity** (+15% on code patterns)
+   - Cross-encoder attention captures code structure
+
+### Production System: Adaptive Routing
+
+Based on evaluation, implemented query-type-aware routing:
+```
+Query → Classifier → Route:
+                     ├─ How-to → Hybrid basic (fast, effective)
+                     ├─ Specific → Vector only (surprisingly good)
+                     ├─ Complex → Hybrid + rerank (quality-focused)
+                     └─ Default → Hybrid basic (safe)
+```
+
+**Result**: 56% Recall@5 at 140ms (vs 53.9% at 278ms for always-rerank)
+
+See [Full Evaluation Report](docs/Week3_Evaluation_Report.md) for detailed analysis.
+
 ## 🤝 Contributing
 
 This is a learning project, but suggestions are welcome! Open an issue or PR.
