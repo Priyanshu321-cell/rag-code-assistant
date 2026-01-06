@@ -161,6 +161,20 @@ def search_code(
         
         print("="*80)
         
+def ask(question: str):
+    """Ask a question and get AI-generated answer (RAG)"""
+    
+    from src.generation.rag_pipeline import RAGPipeline
+    
+    logger.info(f"RAG question: '{question}'")
+    
+    # Initialize pipeline
+    pipeline = RAGPipeline()
+    
+    # Get answer
+    result = pipeline.query_with_display(question)
+    
+    return result
 
 def show_stats():
     """Show statistics about the index"""
@@ -185,6 +199,7 @@ def main():
         print("\nUsage:")
         print("  python main_pipeline.py build              # Build the index")
         print("  python main_pipeline.py rebuild            # Rebuild from scratch")
+        print("  python main_pipeline.py ask 'question'     # RAG Q&A")
         print("  python main_pipeline.py search 'query'     # Search the index")
         print("  python main_pipeline.py stats              # Show index statistics")
         print("\nExamples:")
@@ -218,6 +233,12 @@ def main():
                 file_filter = sys.argv[file_idx + 1]
         
         search_code(query, top_k=5, file_filter=file_filter)
+        
+    elif command == "ask":  # NEW
+        if len(sys.argv) < 3:
+            print("Error: Please provide a question")
+            return
+        ask(sys.argv[2])
     
     elif command == "stats":
         show_stats()

@@ -7,7 +7,7 @@ load_dotenv()
 
 class QueryExpander:
     """Expands search query into multiple variations using LLM"""
-    def __init__(self, api_key: str = os.getenv(key='API_KEY'), model: str = "gemini-3-flash-preview"):
+    def __init__(self, api_key: str = os.getenv(key='GOOGLE_API_KEY'), model: str = "gemini-3-flash-preview"):
         """Initialize query expander"""
         self.api_key = api_key
         if not self.api_key:
