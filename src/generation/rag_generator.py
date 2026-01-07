@@ -69,7 +69,76 @@ class RAGGenerator:
                 'sources' : [],
                 'prompt_used': prompt
             }
+
+    def generate_answer_stream(
+        self,
+        query: str,
+        retrieved_chunks: List[Dict],
+        include_code: bool = True
+    ):
+        """
+        Generate answer with streaming (yields chunks as they come).
+        
+        Args:
+            query: User's question
+            retrieved_chunks: Retrieved code chunks
+            include_code: Include code in answer
             
+        Yields:
+            Dict with 'type' and 'content' for each chunk
+        """
+        
+        if not retrieved_chunks:
+            yield {
+                'type': 'answer',
+                'content': "I couldn't find relevant information to answer your question."
+            }
+            return
+        
+        # First, yield sources immediately
+        sources = self._extract_sources(retrieved_chunks)
+        yield {
+            'type': 'sources',
+            'content': sources
+        }
+        
+        # Build prompt
+        prompt = self._build_prompt(query, retrieved_chunks, include_code)
+        
+        # Stream answer from LLM
+        logger.debug(f"Streaming answer for: '{query}'")
+        
+        try:
+            stream = self.client.models.generate_content_stream(
+                model=self.model,
+                contents=prompt,
+                config={
+                    "max_output_tokens": self.max_tokens
+                }
+            )
+
+            for event in stream:
+                # Text comes inside model output events
+                if event.text:
+                    yield {
+                        'type': 'answer_chunk',
+                        'content': event.text
+                    }
+
+            yield {
+                'type': 'done',
+                'content': None
+            }
+
+            logger.info("Streaming complete")
+
+        except Exception as e:
+            logger.error(f"Streaming failed: {e}")
+            yield {
+                'type': 'error',
+                'content': str(e)
+            }
+        
     def _build_prompt(
         self, query: str, chunks: List[Dict], include_code: bool
     ) -> str:

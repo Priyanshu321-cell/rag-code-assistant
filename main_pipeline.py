@@ -161,18 +161,21 @@ def search_code(
         
         print("="*80)
         
-def ask(question: str):
+def ask(question: str, stream: bool = True):
     """Ask a question and get AI-generated answer (RAG)"""
     
     from src.generation.rag_pipeline import RAGPipeline
     
-    logger.info(f"RAG question: '{question}'")
+    logger.info(f"RAG question: '{question}' (streaming: {stream})")
     
-    # Initialize pipeline
     pipeline = RAGPipeline()
     
-    # Get answer
-    result = pipeline.query_with_display(question)
+    if stream:
+        # Streaming response
+        result = pipeline.query_stream_display(question)
+    else:
+        # Non-streaming (original)
+        result = pipeline.query_with_display(question)
     
     return result
 
@@ -238,7 +241,11 @@ def main():
         if len(sys.argv) < 3:
             print("Error: Please provide a question")
             return
-        ask(sys.argv[2])
+        
+        stream = "--no-stream" not in sys.argv
+        question = ' '.join([arg for arg in sys.argv[2:] if arg != "--no-stream"])
+        
+        ask(question, stream=stream)
     
     elif command == "stats":
         show_stats()
