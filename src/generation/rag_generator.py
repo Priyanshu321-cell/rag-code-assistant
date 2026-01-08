@@ -19,7 +19,6 @@ class RAGGenerator:
         max_tokens: int = 2000
     ):
         """Initialize RAG generator"""
-        from anthropic import Anthropic
         
         self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
         self.client = genai.Client(api_key=self.api_key)
@@ -54,7 +53,6 @@ class RAGGenerator:
             answer = response
             
             sources = self._extract_sources(retrieved_chunks)
-            
             
             return{
                 'answer' : answer.text,

@@ -16,7 +16,7 @@ from src.retrieval.bm25_search import BM25Search
 from src.retrieval.adaptive_search import AdaptiveSearch
 from src.retrieval.reranker import Reranker
 from src.generation.rag_generator import RAGGenerator
-
+from src.generation.conversation import ConversationManager
 
 class RAGPipeline:
     """
@@ -47,10 +47,66 @@ class RAGPipeline:
         # Generation
         self.generator = RAGGenerator()
         
-        logger.info("RAG pipeline ready")
-        
+        self.conversation = ConversationManager(max_history=10)
     
+        logger.info("RAG pipeline ready with conversation support")
+        
+    def query_conversational(
+        self,
+        query: str,
+        n_results: int = 5,
+        resolve_references: bool = True
+    ) -> Dict:
+        """
+        Query with conversation context.
+        
+        Args:
+            query: User's query (may be follow-up)
+            n_results: Number of chunks
+            resolve_references: Whether to resolve follow-up queries
+            
+        Returns:
+            Result dict with conversation context
+        """
+        
+        logger.info(f"Conversational query: '{query}'")
+        
+        # Detect and resolve follow-ups
+        is_followup = self.conversation.is_follow_up(query)
+        
+        if is_followup and resolve_references:
+            logger.info("Detected follow-up question, resolving references...")
+            original_query = query
+            query = self.conversation.resolve_query(query, use_llm=True)
+            logger.info(f"Resolved: '{original_query}' → '{query}'")
+        else:
+            original_query = query
+        
+        # Standard RAG query
+        result = self.query(query, n_results=n_results)
+        
+        # Add to conversation history
+        self.conversation.add_turn(
+            query=original_query,
+            answer=result['answer'],
+            sources=result['sources']
+        )
+        
+        # Add conversation metadata
+        result['original_query'] = original_query
+        result['resolved_query'] = query if is_followup else None
+        result['is_followup'] = is_followup
+        result['conversation_stats'] = self.conversation.get_stats()
+        
+        return result
 
+
+    def clear_conversation(self):
+        """Clear conversation history"""
+        self.conversation.clear()
+        logger.info("Conversation cleared")
+    
+    
     def query_stream(
         self,
         question: str,
