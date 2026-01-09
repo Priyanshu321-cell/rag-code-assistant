@@ -32,6 +32,17 @@ class RAGGenerator:
         include_code : bool = True
     )-> Dict:
         """Generate answer from query and retrieved chunks."""
+        
+        # Validate input
+        if not query or not query.strip():
+            logger.warning("Empty query provided")
+            return {
+                'answer': "Please provide a valid question.",
+                'sources': [],
+                'error': 'empty_query'
+            }
+            
+        # checking for results
         if not retrieved_chunks:
             return{
                 'answer':"I couldn't find relevant information to answer your question Please try rephrasing or ask about a different topic.",
@@ -40,33 +51,86 @@ class RAGGenerator:
             }
             
         # Build prompt
-        prompt = self._build_prompt(query, retrieved_chunks, include_code)
-        
-        logger.debug(f"Generating answer for: '{query}'")
-        
-        try:
-            response = self.client.models.generate_content(
-                model = self.model,
-                contents=prompt
-            )
-            
-            answer = response
-            
-            sources = self._extract_sources(retrieved_chunks)
-            
-            return{
-                'answer' : answer.text,
-                'sources' : sources,
-                'prompt_used' : prompt
-            }
-        
+        try :
+            prompt = self._build_prompt(query, retrieved_chunks, include_code)
         except Exception as e:
-            logger.error(f"Answer generation failed: {e}")
-            return {
-                'answer' : f"Error generating answer: {str(e)}",
-                'sources' : [],
-                'prompt_used': prompt
+            logger.error(f"Prompt building failed: {e}")
+            return{
+                'answer': "Error preparing the query. Please try rephrasing.",
+                'sources': [],
+                'error': 'prompt_error'
             }
+        
+        # check context size 
+        estimated_tokens = len(prompt) // 4   
+            
+        if estimated_tokens > 180000:  
+            logger.warning(f"Context too large: ~{estimated_tokens} tokens")
+            # Retry with fewer chunks
+            return self.generate_answer(
+                query, 
+                retrieved_chunks[:3],  # Use only top 3
+                include_code
+            )   
+            
+            
+        # llm call retries
+        max_retries = 3
+        
+        for attempt in range(max_retries):
+            try:
+                response = self.client.models.generate_content(
+                    model = self.model,
+                    contents=prompt
+                )
+                
+                answer = response.text
+                if not answer or len(answer) < 10:
+                    logger.warning("Generated answer too short")
+                    answer = "I couldn't generate a complete answer. Please try rephrasing your question."                
+                    
+                sources = self._extract_sources(retrieved_chunks)
+                
+                logger.info(f"Answer generated successfully ({len(answer)} chars)")
+                return{
+                    'answer' : answer,
+                    'sources' : sources,
+                    'prompt_used' : prompt,
+                    'error':None
+                }
+            
+            except Exception as e:
+                error_str = str(e)
+                
+                # Rate limit
+                if 'rate_limit' in error_str.lower() or 'overloaded' in error_str.lower():
+                    logger.warning(f"Rate limited, attempt {attempt + 1}/{max_retries}")
+
+                    if attempt < max_retries - 1:
+                        import time
+                        wait_time = (attempt + 1) * 2  # Exponential backoff
+                        logger.info(f"Waiting {wait_time}s before retry...")
+                        time.sleep(wait_time)
+                        continue
+                
+                # Other errors
+                logger.error(f"API error (attempt {attempt + 1}): {e}")
+                
+                if attempt == max_retries - 1:
+                    return {
+                        'answer': self._get_error_message(error_str),
+                        'sources': self._extract_sources(retrieved_chunks),
+                        'error': 'api_error',
+                        'error_details': error_str
+                    }
+                    
+        # Should not reach here
+        return {
+            'answer': "An unexpected error occurred. Please try again.",
+            'sources': [],
+            'error': 'unknown'
+        }
+            
 
     def generate_answer_stream(
         self,
@@ -201,6 +265,22 @@ class RAGGenerator:
             sources.append(source)
         
         return sources
+    
+class RAGException(Exception):
+    """Base exception for rag errors"""
+    pass
+
+class NoRelevantResultsError(RAGException):
+    """No relevant chunks found"""
+    pass
+
+class ContextTooLargeError(RAGException):
+    """Context exceeds model limits"""
+    pass
+
+class APIError(RAGException):
+    """API call failed"""
+    pass
 
 if __name__ == "__main__":
     # Test RAG generator
