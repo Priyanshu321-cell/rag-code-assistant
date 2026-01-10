@@ -218,7 +218,8 @@ class RAGPipeline:
         self,
         question: str,
         n_results: int = 5,
-        include_code: bool = True
+        include_code: bool = True,
+        timeout: int = 30
     ) -> Dict:
         """
         Complete RAG query: retrieve and generate answer.
@@ -232,34 +233,125 @@ class RAGPipeline:
             Dict with 'question', 'answer', 'sources', 'retrieved_chunks'
         """
         
+        # Validate question
+        if not question or not question.strip():
+            logger.warning("Empty question provided")
+            return {
+                'question': question,
+                'answer': "Please provide a valid question.",
+                'sources': [],
+                'error': 'empty_query'
+            }
+            
+        # Check question length
+        if len(question) > 1000:
+            logger.warning(f"Question too long: {len(question)} chars")
+            question = question[:1000]  # Truncate
+            logger.info("Truncated question to 1000 chars")
+        
         logger.info(f"RAG query: '{question}'")
         
-        # Step 1: Retrieve relevant chunks
-        logger.debug("Retrieving relevant chunks...")
-        retrieved_chunks = self.search.search(question, n_results=n_results)
+        try:
+            import signal
+            
+            def timeout_handler(signum, frame):
+                raise TimeoutError("Retrieval timeout")
+            
+            # Set timeout (Unix only)
+            if hasattr(signal, 'SIGALRM'):
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(timeout)
+            
+            try:
+                retrieved_chunks = self.search.search(question, n_results=n_results)
+            finally:
+                if hasattr(signal, 'SIGALRM'):
+                    signal.alarm(0)  # Cancel alarm
+            
+        except TimeoutError:
+            logger.error(f"Retrieval timeout after {timeout}s")
+            return {
+                'question': question,
+                'answer': "The search took too long. Please try a simpler query.",
+                'sources': [],
+                'error': 'timeout'
+            }
+        except Exception as e:
+            logger.error(f"Retrieval failed: {e}")
+            return {
+                'question': question,
+                'answer': f"Search failed: {str(e)}. Please try again.",
+                'sources': [],
+                'error': 'retrieval_error'
+            }
+            
+        # Check retrieval results
+        if not retrieved_chunks:
+            logger.warning("No chunks retrieved")
+            return {
+                'question': question,
+                'answer': self._get_no_results_suggestion(question),
+                'sources': [],
+                'error': 'no_results',
+                'num_chunks_used': 0
+            }
         
         logger.info(f"Retrieved {len(retrieved_chunks)} chunks")
         
-        # Step 2: Generate answer
-        logger.debug("Generating answer...")
+        # Generate answer
         generation_result = self.generator.generate_answer(
             query=question,
             retrieved_chunks=retrieved_chunks,
             include_code=include_code
         )
         
+        # Check for generation errors
+        if generation_result.get('error'):
+            logger.warning(f"Generation error: {generation_result['error']}")
+            
+            
         # Combine results
         result = {
             'question': question,
             'answer': generation_result['answer'],
             'sources': generation_result['sources'],
             'retrieved_chunks': retrieved_chunks,
-            'num_chunks_used': len(retrieved_chunks)
+            'num_chunks_used': len(retrieved_chunks),
+            'error': generation_result.get('error')
         }
         
-        logger.info("RAG query complete")
         return result
     
+    
+    def _get_no_results_suggestion(self, question: str) -> str:
+        """Suggest alternatives when no results found"""
+        
+        return f"""I couldn't find relevant information for: "{question}"
+
+    Suggestions:
+    - Try a more general query (e.g., "routing" instead of "advanced routing patterns")
+    - Check spelling and terminology
+    - Ask about core FastAPI concepts
+    - Try breaking down into simpler questions
+
+    The indexed codebase focuses on FastAPI core functionality."""
+    
+    def query_safe(self, question: str, **kwargs) -> Dict:
+        """
+        Safe query wrapper that never throws exceptions.
+        Always returns a valid result dict.
+        """
+        try:
+            return self.query(question, **kwargs)
+        except Exception as e:
+            logger.error(f"Unhandled error in query: {e}")
+            return {
+                'question': question,
+                'answer': f"An unexpected error occurred: {str(e)}\n\nPlease try again or rephrase your question.",
+                'sources': [],
+                'error': 'unhandled_exception',
+                'num_chunks_used': 0
+            }
     
     def query_with_display(self, question: str):
         """Query and display results in formatted way"""

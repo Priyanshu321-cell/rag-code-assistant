@@ -130,7 +130,45 @@ class RAGGenerator:
             'sources': [],
             'error': 'unknown'
         }
-            
+    def _get_no_results_message(self, query: str) -> str:
+        """Generate helpful message when no results found"""
+        
+        return f"""I couldn't find relevant information to answer: "{query}"
+
+    This could mean:
+    - The topic isn't covered in the indexed FastAPI codebase
+    - Try rephrasing your question
+    - Try a more general query
+
+    Would you like to try asking in a different way?"""      
+    
+    def _get_error_message(self, error: str) -> str:
+        """Generate user-friendly error message"""
+        
+        if 'rate_limit' in error.lower():
+            return """The AI service is currently busy. Please wait a moment and try again.
+
+    This usually resolves within a few seconds."""
+        
+        elif 'timeout' in error.lower():
+            return """The request timed out. This might be due to network issues.
+
+    Please try again."""
+        
+        elif 'context_length' in error.lower():
+            return """The query context is too large. Try:
+    - Asking a more specific question
+    - Breaking down into smaller questions"""
+        
+        else:
+            return f"""An error occurred while generating the answer.
+
+    Please try:
+    - Rephrasing your question
+    - Asking something more specific
+    - Trying again in a moment
+
+    Technical details: {error[:100]}"""  
 
     def generate_answer_stream(
         self,
