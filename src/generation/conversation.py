@@ -66,6 +66,84 @@ class ConversationManager:
         
         return self.history[-n_turns:] if self.history else []
     
+    def validate_state(self) -> bool:
+        """
+        Validate conversation state integrity.
+        
+        Returns:
+            True if state is valid
+        """
+        try:
+            # Check history structure
+            if not isinstance(self.history, list):
+                logger.error("History is not a list")
+                return False
+            
+            # Validate each turn
+            for i, turn in enumerate(self.history):
+                if not isinstance(turn, dict):
+                    logger.error(f"Turn {i} is not a dict")
+                    return False
+                
+                required_keys = ['query', 'answer', 'sources', 'turn_number']
+                if not all(key in turn for key in required_keys):
+                    logger.error(f"Turn {i} missing required keys")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"State validation error: {e}")
+            return False
+        
+    def safe_add_turn(self, query: str, answer: str, sources: List[Dict]) -> bool:
+        """
+        Safely add turn with validation.
+        
+        Returns:
+            True if successful
+        """
+        try:
+            # Validate inputs
+            if not query or not isinstance(query, str):
+                logger.warning("Invalid query")
+                return False
+            
+            if not answer or not isinstance(answer, str):
+                logger.warning("Invalid answer")
+                return False
+            
+            if not isinstance(sources, list):
+                logger.warning("Invalid sources")
+                sources = []
+            
+            # Add turn
+            self.add_turn(query, answer, sources)
+            
+            # Validate state after
+            if not self.validate_state():
+                logger.error("State invalid after add_turn")
+                # Rollback
+                self.history = self.history[:-1]
+                return False
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error adding turn: {e}")
+            return False
+
+
+    def resolve_query(self, query: str, use_llm: bool = True) -> str:
+        """Resolve with fallback on error"""
+        
+        try:
+            return super().resolve_query(query, use_llm)
+        except Exception as e:
+            logger.error(f"Query resolution failed: {e}")
+            # Fallback: return original
+            return query
+    
     
     def get_context_summary(self, n_turns: int = 3) -> str:
         """
