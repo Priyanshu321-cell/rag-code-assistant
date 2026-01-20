@@ -2,7 +2,7 @@ from loguru import logger
 from typing import List,Dict
 
 class HybridSearch:
-    def __init__(self, bm25_searcher, vector_store, reranker = None,query_expander=None, query_classifier = None, k: int = 60):
+    def __init__(self, bm25_searcher, vector_store, reranker = None,query_expander=None, query_classifier = None, k: int = 30):
         """Initialize hybrid search"""
         self.bm25 = bm25_searcher
         self.vector = vector_store
@@ -78,7 +78,7 @@ class HybridSearch:
         return final
         
     def _rrf_score(self, rank:int)->float:
-        """Calculate RRF score for a given rank"""
+        """Calculate RRF score for a given rank - optimized k=30 for better merging"""
         return 1.0/(rank+self.k)
     
     def _merge_results(

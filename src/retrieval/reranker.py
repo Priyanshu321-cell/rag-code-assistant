@@ -13,40 +13,66 @@ class Reranker:
         logger.info("Reranker ready")
     
     def rerank(
-        self,
-        query:str,
-        results:List[Dict],
-        top_k: int = None
-    )-> List[Dict]:
-        """Rerank results using cross encoder"""
-        if results == [] :
-            logger.warning("No results found to reranked")
-            return []
-        logger.debug(f"Reranking {len(results)} results for query: '{query}'")
-        pairs = self._create_pairs(query,results)
-        scores = self.model.predict(pairs)
-        for i , result in enumerate(results):
-            result['rerank_score'] = float(scores[i])
-            
-        reranked= sorted(results, key=lambda x : x['rerank_score'], reverse=True)
-        
-        if top_k:
-            reranked = reranked[:top_k]
-            
-        logger.debug(f"Reranking complete, returning {len(reranked)} results")
-        return reranked
-    
-    def _create_pairs(self, query: str, results: List[Dict]) -> List[List[str]]:
-        """Create pairs - SIMPLE VERSION"""
-        
-        pairs = []
-        for result in results:
-            function_name = result['metadata']['function']
-            file = result['metadata']['file']
-            pairs.append([query, f"{function_name} - {file}"])
-        
-        return pairs
+            self,
+            query:str,
+            results:List[Dict],
+            top_k: int | None = None
+        )-> List[Dict]:
+            """Rerank results using cross encoder"""
+            if results == [] :
+                logger.warning("No results found to reranked")
+                return []
+            logger.debug(f"Reranking {len(results)} results for query: '{query}'")
+            pairs = self._create_pairs(query,results)
+            scores = self.model.predict(pairs)
+            for i , result in enumerate(results):
+                result['rerank_score'] = float(scores[i])
                 
+            reranked= sorted(results, key=lambda x : x['rerank_score'], reverse=True)
+            
+            if top_k:
+                reranked = reranked[:top_k]
+                
+            logger.debug(f"Reranking complete, returning {len(reranked)} results")
+            return reranked
+        
+    def _create_pairs(self, query: str, results: List[Dict]) -> List[List[str]]:
+            """Create pairs with enhanced context for better accuracy"""
+            
+            pairs = []
+            for result in results:
+                metadata = result['metadata']
+                
+                # Build rich context string
+                context_parts = []
+                
+                # Function name (most important)
+                if 'function' in metadata:
+                    context_parts.append(metadata['function'])
+                
+                # File path for context
+                if 'file' in metadata:
+                    context_parts.append(f"file: {metadata['file']}")
+                
+                # Function signature if available
+                if 'signature' in metadata:
+                    context_parts.append(f"sig: {metadata['signature']}")
+                
+                # Docstring excerpt for semantic context
+                if 'docstring' in metadata and metadata['docstring']:
+                    docstring = metadata['docstring'][:100]  # Limit length
+                    context_parts.append(f"doc: {docstring}")
+                
+                # Class context if available
+                if 'class' in metadata:
+                    context_parts.append(f"class: {metadata['class']}")
+                
+                # Join all context parts
+                context = " | ".join(context_parts)
+                pairs.append([query, context])
+            
+            return pairs
+                    
                 
 if __name__ == "__main__":
     
