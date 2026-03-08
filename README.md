@@ -1,5 +1,3 @@
-# In Active Development 🚧
-
 # Code Intelligence Assistant - RAG System for FastAPI
 
 A production-grade Retrieval-Augmented Generation (RAG) system that enables semantic search over the FastAPI codebase. Built from scratch to demonstrate ML engineering skills.
